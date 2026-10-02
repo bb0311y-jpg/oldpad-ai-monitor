@@ -150,7 +150,9 @@ function cardHtml(account) {
     body = `<div class="buckets">${usage.buckets.map((b) => bucketHtml(b, compact, usage.buckets)).join('')}</div>`;
     if (!compact) {
       const at = new Date(usage.fetchedAt);
-      body += `<div class="card-note meta">${ICONS.clock}<span>更新於 ${fmtClock.format(at)}</span></div>`;
+      const ageMin = Math.round((Date.now() - usage.fetchedAt) / 60000);
+      const stale = ageMin >= 20; // 跟 iPad 儀表板同一個標準：超過 20 分鐘沒更新就提醒
+      body += `<div class="card-note meta${stale ? ' warn-text' : ''}">${ICONS.clock}<span>更新於 ${fmtClock.format(at)}${stale ? `（已 ${ageMin} 分鐘沒更新）` : ''}</span></div>`;
     }
   } else if (usage && !usage.ok) {
     body = `

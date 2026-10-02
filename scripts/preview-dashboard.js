@@ -23,6 +23,9 @@ const accounts = [
   { id: 'demo-5', provider: 'claude', label: 'second@example.com', email: null, needsReauth: false, planType: 'max' },
   { id: 'demo-6', provider: 'codex', label: 'ChatGPT Pro', email: null, needsReauth: false, planType: 'pro' },
 ];
+// --accounts=N 只保留前 N 個示範帳號（截圖不同版面用）
+const limitArg = process.argv.find((a) => a.startsWith('--accounts='));
+if (limitArg) accounts.length = Math.max(0, Math.min(accounts.length, Number(limitArg.slice('--accounts='.length)) || 0));
 const usage = {};
 
 async function refresh() {

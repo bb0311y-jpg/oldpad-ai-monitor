@@ -77,8 +77,26 @@ class UsagePoller {
     const now = Date.now();
     for (const account of this.getAccounts()) {
       const st = this._stateOf(account.id);
+      // 看門狗：一次抓取卡超過上限（理論上 fetch 都有逾時，但保險）→ 解鎖並記一筆，不然這個帳號會永遠不再更新
+      if (st.inFlight && now - st.startedAt > C.FETCH_STUCK_MS) {
+        this.onEvent(account.id, 'fetch_stuck', `卡住 ${Math.round((now - st.startedAt) / 1000)} 秒，強制解鎖`);
+        st.inFlight = false;
+      }
       if (!st.inFlight && now >= st.nextAt) this.fetchOne(account.id);
     }
+  }
+
+  // 任何一次抓取（含續期）最多等這麼久，超過就當失敗退避重試
+  _withHardTimeout(promise, label) {
+    let timer;
+    const guard = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        const err = new Error(`${label}超過 ${Math.round(C.FETCH_HARD_TIMEOUT_MS / 1000)} 秒沒回應，稍後重試`);
+        err.code = 'TRANSIENT';
+        reject(err);
+      }, C.FETCH_HARD_TIMEOUT_MS);
+    });
+    return Promise.race([promise, guard]).finally(() => clearTimeout(timer));
   }
 
   refreshAll(force) {
@@ -105,14 +123,15 @@ class UsagePoller {
       return;
     }
     st.inFlight = true;
+    st.startedAt = Date.now();
     try {
       let result;
       if (account.provider === 'demo') {
         result = await demoProvider.fetchUsage(null, account.demoSeed || 1);
       } else {
         const impl = this.providers[account.provider] || this.providers.claude;
-        const accessToken = await this._ensureFreshToken(account, impl);
-        result = await impl.fetchUsage(account, accessToken);
+        const accessToken = await this._withHardTimeout(this._ensureFreshToken(account, impl), '憑證檢查');
+        result = await this._withHardTimeout(impl.fetchUsage(account, accessToken), '抓用量');
       }
       this.onRaw(accountId, result.raw);
       st.failures = 0;

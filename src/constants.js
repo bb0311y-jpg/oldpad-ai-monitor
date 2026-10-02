@@ -75,4 +75,8 @@ module.exports = {
 
   // fetch 逾時（毫秒）
   FETCH_TIMEOUT_MS: 15000,
+  // 整次抓取（含續期）的硬上限；超過就當暫時失敗退避重試
+  FETCH_HARD_TIMEOUT_MS: 60 * 1000,
+  // 看門狗：inFlight 卡超過這麼久就強制解鎖（避免某個帳號永遠不再更新）
+  FETCH_STUCK_MS: 3 * 60 * 1000,
 };

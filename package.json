@@ -1,6 +1,6 @@
 {
   "name": "oldpad-ai-monitor",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "OldPad AI Monitor: turn an old iPad / tablet into an always-on AI quota (Claude, ChatGPT Codex) and PC monitor, with a Windows desktop widget",
   "author": "Antor",
   "license": "PolyForm-Noncommercial-1.0.0",

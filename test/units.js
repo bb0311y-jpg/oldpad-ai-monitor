@@ -838,6 +838,40 @@ console.log('\n憑證續期（授權失效 vs 暫時失敗）：');
     assert.strictEqual(refreshed, 1);
   });
 
+  testAsync('抓用量卡住不回 → 硬逾時當暫時失敗；inFlight 卡太久 → 看門狗解鎖，下一輪照常抓', async () => {
+    const origHard = C.FETCH_HARD_TIMEOUT_MS;
+    const origStuck = C.FETCH_STUCK_MS;
+    C.FETCH_HARD_TIMEOUT_MS = 150;
+    C.FETCH_STUCK_MS = 100;
+    try {
+      const account = {
+        id: 'a6', provider: 'claude', needsReauth: false,
+        tokens: { accessToken: 'ok', refreshToken: 'r', expiresAt: Date.now() + 3600 * 1000, refreshedAt: Date.now() },
+      };
+      let calls = 0;
+      const { poller, events, results } = makePoller(account, {
+        refreshImpl: async () => { throw new Error('不該續期'); },
+        fetchImpl: () => { calls += 1; return calls === 1 ? new Promise(() => {}) : Promise.resolve({ buckets: [], raw: {} }); },
+      });
+      await poller.fetchOne('a6');
+      assert.strictEqual(results.length, 1);
+      assert.strictEqual(results[0].ok, false);
+      assert.ok(results[0].error.includes('沒回應'), results[0].error);
+      assert.strictEqual(account.needsReauth, false);
+      assert.strictEqual(poller._stateOf('a6').inFlight, false, '硬逾時後要解鎖');
+      const st = poller._stateOf('a6');
+      st.inFlight = true; st.startedAt = Date.now() - 1000; st.nextAt = 0;
+      poller.tick();
+      assert.ok(events.some((e) => e.kind === 'fetch_stuck'), '看門狗要記一筆');
+      await new Promise((r) => setTimeout(r, 30));
+      assert.strictEqual(calls, 2, '解鎖後同一輪就重新抓');
+      assert.strictEqual(results[results.length - 1].ok, true);
+    } finally {
+      C.FETCH_HARD_TIMEOUT_MS = origHard;
+      C.FETCH_STUCK_MS = origStuck;
+    }
+  });
+
   test('事件紀錄：寫入 events.log，超過上限會只留後半', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aium-ev-'));
     const store = new Store(dir);

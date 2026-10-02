@@ -76,6 +76,21 @@ node scripts/preview-dashboard.js 7801   # dashboard with demo data, no Electron
 With more than five accounts the dashboard switches to a "quota on top" layout; add `?layout=rows`,
 `?layout=grouped` or `?layout=wall` to the URL for alternatives.
 
+### Dashboard layouts (demo data)
+
+| | |
+|---|---|
+| **Up to 5 accounts** — quota column on the left, system tiles on the right. ![3 accounts](docs/layout-3-accounts.png) | **6+ accounts, default "quota on top"** — three cards per row, system tiles in one strip. ![quota on top](docs/dashboard.png) |
+| **`?layout=rows`** — one account per line, easy to scan top-down. ![rows](docs/layout-rows.png) | **`?layout=grouped`** — Claude on the left, other providers on the right. ![grouped](docs/layout-grouped.png) |
+| **`?layout=wall`** — the compact two-column card wall. ![wall](docs/layout-wall.png) | **Long-press drag to reorder** — the lifted card follows your finger, others make room; order is saved on the PC. ![drag](docs/layout-drag.png) |
+
+Portrait (768 px wide) stacks quota above the system tiles:
+
+<img src="docs/layout-portrait.png" width="384" alt="portrait layout">
+
+Every card shows the 5-hour window (big number + countdown) and the weekly quota (overall + per-model rows).
+Cards go grey when the PC has not refreshed that account for 20 minutes.
+
 ## Troubleshooting
 
 - **"授權已過期 / needs re-login" on a card** — press **先重試** first. Only a server-side rejection is treated
@@ -149,7 +164,9 @@ submitting a pull request you agree that the author may relicense your contribut
 4. 想看 CPU 溫度／風扇：把 LibreHardwareMonitor 解壓到 `C:\Tools\LibreHardwareMonitor`、放入附的 `LibreHardwareMonitor.config`，
    雙擊 `安裝溫度監測-LibreHardwareMonitor.bat`，它會登錄成開機自動啟動（管理員）。
 5. 帳號超過 5 個會自動切成「額度置頂」版面；卡片**長按 0.3 秒可拖曳換位**，順序記在電腦端。
-   網址後加 `?layout=rows`／`grouped`／`wall` 可換版面。
+   網址後加 `?layout=rows`／`grouped`／`wall` 可換版面。各版面長相見上方 [Dashboard layouts](#dashboard-layouts-demo-data)
+   （都是示範資料）：帳號 5 個以內＝左額度右系統；6 個以上預設額度置頂一列三張；`rows` 單欄列表；
+   `grouped` 依服務分兩欄；`wall` 兩欄卡片牆；直放時額度在上、系統在下。資料超過 20 分鐘沒更新的卡片會變灰。
 
 ### 常見問題
 
