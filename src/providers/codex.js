@@ -133,10 +133,10 @@ function normalizeCredits(raw) {
     if (c.unlimited) text = '無限';
     else if (!c.has_credits) text = '無';
     else {
+      // 回應裡還有 approx_local_messages（OpenAI 估這些點數約可再發幾則訊息的範圍），
+      // 數字範圍太寬又占版面，不顯示；原始值仍在 debug 檔裡
       const bal = num(c.balance);
       text = bal === null ? '有' : fmtInt(bal);
-      const range = Array.isArray(c.approx_local_messages) ? c.approx_local_messages.map((x) => num(x)).filter((x) => x !== null) : [];
-      if (range.length === 2 && range[1] > 0) text += `（約 ${fmtInt(range[0])}～${fmtInt(range[1])} 則）`;
     }
     if (c.overage_limit_reached) {
       text += '・已達上限';

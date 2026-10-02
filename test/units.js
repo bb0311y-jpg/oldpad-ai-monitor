@@ -728,7 +728,7 @@ console.log('\nCredits（額外用量／點數）：');
       credits: { has_credits: true, unlimited: false, overage_limit_reached: false, balance: '56581.1407', approx_local_messages: [14145, 73555] },
       rate_limit_reset_credits: { available_count: 3 },
     });
-    assert.deepStrictEqual(c.items, [{ name: '點數', text: '56,581（約 14,145～73,555 則）' }, { name: '重置券', text: '3 張' }]);
+    assert.deepStrictEqual(c.items, [{ name: '點數', text: '56,581' }, { name: '重置券', text: '3 張' }]);
     const none = codex.normalizeCredits({ credits: { has_credits: false, balance: '0', approx_local_messages: [0, 0] }, rate_limit_reset_credits: { available_count: 2 } });
     assert.strictEqual(none.items[0].text, '無');
     assert.strictEqual(none.items[1].text, '2 張');

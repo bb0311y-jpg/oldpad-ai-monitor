@@ -41,7 +41,7 @@ async function refresh() {
 // 各家 Credits 的示範樣子（Claude＝額外用量金額／美元額度；Codex＝點數＋重置券）
 function demoCredits(provider, i) {
   if (provider === 'codex') {
-    return { label: 'Credits', items: [{ name: '點數', text: `${(12000 + i * 9000).toLocaleString('en-US')}（約 3,000～15,000 則）` }, { name: '重置券', text: `${(i % 3) + 1} 張` }], percent: null, level: null };
+    return { label: 'Credits', items: [{ name: '點數', text: `${(12000 + i * 9000).toLocaleString('en-US')}` }, { name: '重置券', text: `${(i % 3) + 1} 張` }], percent: null, level: null };
   }
   if (provider === 'claude') {
     return i % 2
