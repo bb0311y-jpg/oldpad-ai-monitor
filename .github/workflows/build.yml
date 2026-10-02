@@ -6,6 +6,10 @@ on:
     tags: ['v*']
   pull_request:
 
+# 建 Release／掛檔案需要寫入權限（GITHUB_TOKEN 預設唯讀）
+permissions:
+  contents: write
+
 jobs:
   windows:
     runs-on: windows-latest
