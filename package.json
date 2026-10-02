@@ -60,7 +60,7 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AI用量監控",
+      "shortcutName": "OldPad AI Monitor",
       "artifactName": "OldPad-AI-Monitor-Setup-${version}.${ext}",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false
