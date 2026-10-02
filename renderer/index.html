@@ -150,6 +150,14 @@
         <code id="lan-url">—</code>
         <button id="btn-lan-copy" class="btn ghost small">複製網址</button>
       </div>
+      <label class="setting-row checkbox">
+        <input id="set-autoupdate" type="checkbox" />
+        <span>自動更新<small>每 6 小時到 GitHub 檢查新版並在背景下載，重新啟動時安裝；只換程式本體，帳號與設定都保留。</small></span>
+      </label>
+      <div class="setting-row lan-row">
+        <small id="update-status"></small>
+        <button id="btn-check-update" class="btn ghost small">檢查更新</button>
+      </div>
       <div class="setting-row buttons">
         <button id="btn-demo" class="btn ghost">加入示範帳號</button>
         <button id="btn-quit" class="btn danger">結束程式</button>

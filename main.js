@@ -52,7 +52,80 @@ const DEFAULT_SETTINGS = {
   firstTrayHint: true,
   lanEnabled: true, // 在區網開一個網頁儀表板，給 iPad／手機看（v1.3.0）
   lanPort: LAN_DEFAULT_PORT,
+  autoUpdate: true, // 自動到 GitHub Releases 檢查新版、背景下載，重啟時安裝（只換程式本體，不動帳號資料）
 };
+
+// ============================================================
+// 自動更新（electron-updater → GitHub Releases）
+//  - 只在打包後的安裝版運作；開發模式與 smoke 不做
+//  - 流程：啟動 30 秒後檢查 → 有新版就背景下載 → 下載完提示「重新啟動更新」；
+//    使用者不理它也沒關係，下次關閉程式時會自動裝好
+//  - 更新只會覆蓋程式本體，帳號授權與設定都在 %APPDATA%，不受影響
+// ============================================================
+
+let autoUpdater = null;
+try {
+  ({ autoUpdater } = require('electron-updater'));
+} catch {
+  /* 沒裝 electron-updater（例如從原始碼跑）就當沒有這個功能 */
+}
+const UPDATE_CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+let updateState = { status: 'idle', version: null, percent: null, error: null, checkedAt: null };
+let updateTimer = null;
+
+function setUpdateState(patch) {
+  updateState = { ...updateState, ...patch };
+  broadcast('update:state', updateState);
+  updateTray();
+}
+
+function updateAvailable() {
+  return Boolean(autoUpdater) && app.isPackaged && !IS_SMOKE;
+}
+
+function checkForUpdates(manual = false) {
+  if (!updateAvailable()) return updateState;
+  if (!manual && !settings.autoUpdate) return updateState;
+  if (updateState.status === 'downloading' || updateState.status === 'ready') return updateState;
+  setUpdateState({ status: 'checking', error: null, checkedAt: Date.now() });
+  autoUpdater.checkForUpdates().catch((err) => {
+    setUpdateState({ status: 'error', error: err.message });
+    store.appendEvent(`[update_error] ${err.message}`);
+  });
+  return updateState;
+}
+
+function setupAutoUpdate() {
+  if (!updateAvailable()) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.logger = null;
+  autoUpdater.on('update-available', (info) => {
+    setUpdateState({ status: 'downloading', version: info.version, percent: 0 });
+    store.appendEvent(`[update_available] v${info.version}`);
+  });
+  autoUpdater.on('update-not-available', () => setUpdateState({ status: 'idle', version: null, percent: null }));
+  autoUpdater.on('download-progress', (p) => setUpdateState({ status: 'downloading', percent: Math.round(p.percent) }));
+  autoUpdater.on('update-downloaded', (info) => {
+    setUpdateState({ status: 'ready', version: info.version, percent: 100 });
+    store.appendEvent(`[update_ready] v${info.version} 已下載，重新啟動即安裝`);
+  });
+  autoUpdater.on('error', (err) => {
+    // 網路不通、GitHub 暫時掛掉之類：記一筆就好，不打擾使用者
+    setUpdateState({ status: 'error', error: err && err.message ? err.message : String(err) });
+    store.appendEvent(`[update_error] ${err && err.message ? err.message : err}`);
+  });
+  setTimeout(() => checkForUpdates(false), 30 * 1000);
+  updateTimer = setInterval(() => checkForUpdates(false), UPDATE_CHECK_EVERY_MS);
+}
+
+function installUpdateNow() {
+  if (!updateAvailable() || updateState.status !== 'ready') return false;
+  quitting = true;
+  store.appendEvent(`[update_install] v${updateState.version}`);
+  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  return true;
+}
 
 // 切換欄數／精簡模式時套用的預設視窗寬度（欄數 × 卡片寬 + 邊距）；
 // 之後使用者可以再自己拉大縮小
@@ -376,6 +449,7 @@ function updateTray() {
       { label: '立即更新用量', click: () => poller && poller.refreshAll(true) },
       { type: 'separator' },
       ...lanTrayItems(),
+      ...updateTrayItems(),
       {
         label: '視窗置頂',
         type: 'checkbox',
@@ -398,6 +472,18 @@ function updateTray() {
       },
     ])
   );
+}
+
+// 系統列選單裡的「更新」：下載好了就變成一鍵重啟安裝
+function updateTrayItems() {
+  if (!updateAvailable()) return [];
+  if (updateState.status === 'ready') {
+    return [{ label: `重新啟動以更新到 v${updateState.version}`, click: () => installUpdateNow() }];
+  }
+  if (updateState.status === 'downloading') {
+    return [{ label: `正在下載 v${updateState.version}（${updateState.percent || 0}%）`, enabled: false }];
+  }
+  return [{ label: '檢查更新', click: () => checkForUpdates(true) }];
 }
 
 // 系統列選單裡的「iPad 儀表板網址」：點一下複製
@@ -470,7 +556,11 @@ function registerIpc() {
     usage: usageCache,
     version: app.getVersion(),
     lan: lanInfo(),
+    update: { ...updateState, supported: updateAvailable() },
   }));
+
+  ipcMain.handle('update:check', () => ({ ...checkForUpdates(true), supported: updateAvailable() }));
+  ipcMain.handle('update:install', () => installUpdateNow());
 
   ipcMain.handle('lan:info', () => lanInfo());
   ipcMain.handle('lan:copyUrl', () => {
@@ -864,6 +954,7 @@ if (!gotLock) {
       createTray();
       poller.start();
       startLanServer();
+      setupAutoUpdate();
       // 剛從睡眠醒來時網路常常還沒接上：先等網路恢復（最多 90 秒）再抓，
       // 避免把「一時連不上」誤判成授權失效
       powerMonitor.on('resume', () => {

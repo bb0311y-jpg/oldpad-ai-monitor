@@ -196,6 +196,27 @@ function cardHtml(account) {
     </article>`;
 }
 
+// 頁尾版本號：有新版下載好了就變成「重新啟動更新」按鈕；下載中顯示進度
+function footerVersionHtml() {
+  const u = state.update || {};
+  if (u.status === 'ready') {
+    return `v${esc(state.version)} → <button class="btn small primary" data-action="install-update" title="只換程式本體，帳號與設定都會保留">重新啟動更新到 v${esc(u.version)}</button>`;
+  }
+  if (u.status === 'downloading') return `v${esc(state.version)} · 下載新版 v${esc(u.version)} ${u.percent || 0}%`;
+  return `v${esc(state.version)}`;
+}
+
+function updateStatusText() {
+  const u = state.update || {};
+  if (u.supported === false) return '從原始碼執行時不會自動更新';
+  if (u.status === 'checking') return '檢查中…';
+  if (u.status === 'downloading') return `下載 v${u.version} 中 ${u.percent || 0}%`;
+  if (u.status === 'ready') return `v${u.version} 已下載，重新啟動就會更新`;
+  if (u.status === 'error') return `上次檢查失敗：${u.error || ''}`;
+  if (u.checkedAt) return `已是最新版（${fmtClock.format(new Date(u.checkedAt))} 檢查）`;
+  return '';
+}
+
 function emptyStateHtml() {
   return `
     <div class="empty-state">
@@ -224,7 +245,7 @@ function render() {
     .filter((u) => u && u.ok)
     .map((u) => u.fetchedAt);
   $('#last-updated').textContent = times.length ? `最後更新 ${fmtClock.format(new Date(Math.max(...times)))}` : '';
-  $('#footer-note').textContent = `v${state.version}`;
+  $('#footer-note').innerHTML = footerVersionHtml();
 
   // 標題列按鈕狀態
   $('#btn-pin').classList.toggle('active', Boolean(state.settings.alwaysOnTop));
@@ -417,6 +438,8 @@ function openSettings() {
   $('#set-autoheight').checked = s.autoHeight !== false;
   $('#set-autostart').checked = Boolean(s.openAtLogin);
   $('#set-lan').checked = s.lanEnabled !== false;
+  $('#set-autoupdate').checked = s.autoUpdate !== false;
+  $('#update-status').textContent = updateStatusText();
   renderLan(state.lan);
   $('#app-version').textContent = `AI 用量監控 v${state.version}`;
   $('#panel-settings').classList.remove('hidden');
@@ -589,6 +612,20 @@ function bindEvents() {
     window.api.updateSettings({ lanEnabled: e.target.checked });
     renderLan({ ...state.lan, enabled: e.target.checked, running: false, error: null });
   });
+  $('#set-autoupdate').addEventListener('change', (e) => window.api.updateSettings({ autoUpdate: e.target.checked }));
+  $('#btn-check-update').addEventListener('click', async () => {
+    state.update = await window.api.checkUpdate();
+    $('#update-status').textContent = updateStatusText();
+  });
+  // 頁尾的「重新啟動更新」按鈕
+  $('#footer-note').addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="install-update"]')) window.api.installUpdate();
+  });
+  window.api.on('update:state', (u) => {
+    state.update = { ...(state.update || {}), ...u };
+    $('#footer-note').innerHTML = footerVersionHtml();
+    if (!$('#panel-settings').classList.contains('hidden')) $('#update-status').textContent = updateStatusText();
+  });
   $('#btn-lan-copy').addEventListener('click', async () => {
     const ok = await window.api.copyLanUrl();
     $('#btn-lan-copy').textContent = ok ? '已複製' : '沒有網址';
@@ -657,6 +694,7 @@ async function init() {
   state.usage = snapshot.usage || {};
   state.version = snapshot.version || '';
   state.lan = snapshot.lan || {};
+  state.update = snapshot.update || {};
 
   window.api.on('accounts:changed', (accounts) => {
     state.accounts = accounts;

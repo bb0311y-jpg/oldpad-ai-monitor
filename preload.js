@@ -3,7 +3,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 // 畫面（renderer）只能透過這個白名單 API 跟主程序溝通
-const EVENTS = new Set(['usage:update', 'accounts:changed', 'settings:changed', 'auth:auto', 'lan:changed']);
+const EVENTS = new Set(['usage:update', 'accounts:changed', 'settings:changed', 'auth:auto', 'lan:changed', 'update:state']);
 
 contextBridge.exposeInMainWorld('api', {
   getState: () => ipcRenderer.invoke('state:get'),
@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('api', {
   refreshUsage: (accountId) => ipcRenderer.invoke('usage:refresh', { accountId }),
   updateSettings: (patch) => ipcRenderer.invoke('settings:update', patch),
   getLanInfo: () => ipcRenderer.invoke('lan:info'),
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
   copyLanUrl: () => ipcRenderer.invoke('lan:copyUrl'),
 
   setWindowHeight: (h) => ipcRenderer.invoke('window:setHeight', h),

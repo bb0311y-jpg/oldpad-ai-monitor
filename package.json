@@ -1,6 +1,6 @@
 {
   "name": "oldpad-ai-monitor",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "OldPad AI Monitor: turn an old iPad / tablet into an always-on AI quota (Claude, ChatGPT Codex) and PC monitor, with a Windows desktop widget",
   "author": "Antor",
   "license": "PolyForm-Noncommercial-1.0.0",
@@ -24,7 +24,7 @@
     "smoke": "electron . --smoke",
     "test": "node test/units.js",
     "make-icon": "node scripts/make-icon.js",
-    "dist": "node scripts/make-icon.js && electron-builder --win nsis"
+    "dist": "node scripts/make-icon.js && electron-builder --win nsis --publish never"
   },
   "devDependencies": {
     "electron": "^37.0.0",
@@ -65,7 +65,17 @@
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false
     },
-    "artifactName": "OldPad-AI-Monitor-Setup-${version}.${ext}"
+    "artifactName": "OldPad-AI-Monitor-Setup-${version}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "bb0311y-jpg",
+        "repo": "oldpad-ai-monitor"
+      }
+    ]
   },
-  "homepage": "https://github.com/bb0311y-jpg/oldpad-ai-monitor#readme"
+  "homepage": "https://github.com/bb0311y-jpg/oldpad-ai-monitor#readme",
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
 }

@@ -51,6 +51,15 @@ CPU／GPU／記憶體／硬碟讀寫／溫度（最舊實測到 iPad 4、iOS 10�
      automatically (local port 1455).
 4. Usage refreshes every 5 minutes by default (1–30 min in settings).
 
+### Updates
+
+The installed app checks GitHub Releases 30 s after start and every 6 hours, downloads a new version in the
+background and shows **「重新啟動更新到 vX.Y.Z」** in the footer (also in the tray menu). Click it, or just
+quit the app — the update installs on exit. Updates replace the program files only; your accounts, tokens and
+settings live in `%APPDATA%\ai-usage-monitor` and are untouched. Turn the check off in settings
+(*自動更新*) if you prefer to update by hand. Versions before 1.4.4 do not update themselves — install 1.4.4
+once manually.
+
 ### Run from source
 
 ```bash
@@ -58,9 +67,13 @@ npm install
 npm start          # the widget
 npm test           # unit tests (no window needed)
 npm run smoke      # off-screen render → smoke.png, exits by itself
-npm run dist       # Windows installer → dist/
+npm run dist       # Windows installer → dist/ (also dist/latest.yml + .blockmap for auto-update)
 node scripts/preview-dashboard.js 7801   # dashboard with demo data, no Electron
 ```
+
+**Releasing**: bump `version` in `package.json`, tag `vX.Y.Z` and push — the GitHub Action builds and attaches
+`OldPad-AI-Monitor-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` to the release. Installed copies pick the new
+version up from `latest.yml`, so all three files must be on the release (when releasing by hand, upload all three).
 
 ## LAN dashboard on a tablet
 
@@ -155,6 +168,9 @@ submitting a pull request you agree that the author may relicense your contribut
      連第二個帳號時請用「複製授權連結」貼到**無痕視窗**開，才不會又授權到同一個帳號。
    - **ChatGPT Codex**：瀏覽器登入 → 同意 → 小工具自動接手（本機 1455 埠）。
 4. 預設每 5 分鐘更新一次，設定裡可調 1～30 分鐘。
+5. **自動更新（1.4.4 起）**：程式啟動 30 秒後與之後每 6 小時會到 GitHub Releases 檢查新版，有的話在背景下載，
+   下載完頁尾會出現「重新啟動更新到 vX.Y.Z」按鈕（系統列選單也有）；不按也沒關係，下次關閉程式時自動安裝。
+   更新只換程式本體，帳號授權與設定都在 `%APPDATA%\ai-usage-monitor`，不會被清掉。設定裡可以關掉自動更新。
 
 ### iPad／手機儀表板
 
