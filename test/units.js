@@ -633,10 +633,14 @@ test('硬碟讀寫：兩次原始計數器相減 → 讀寫速度／忙碌％／
   assert.equal(sysm.diskIoFromRaw(b, c)[0].busyPct, 0);
 });
 
-testAsync('取樣器：touch 後 2.5 秒內取得 CPU／記憶體／硬碟，stop 後計時器停', async () => {
+testAsync('取樣器：touch 後拿得到 CPU／記憶體／硬碟，stop 後計時器停', async () => {
   const m = new sysm.SystemMetrics({ lhmUrl: 'http://127.0.0.1:1/data.json', nvidiaSmi: 'no-such-nvidia-smi' });
   m.touch();
-  await new Promise((r) => setTimeout(r, 2600));
+  // 第二輪取樣（有前一筆 CPU 快照）才算得出 CPU％；慢機器／CI 上 wmic 可能要好幾秒，最多等 20 秒
+  const deadline = Date.now() + 20 * 1000;
+  while (Date.now() < deadline && (m.latest.cpu.pct === null || m.latest.sampledAt === null)) {
+    await new Promise((r) => setTimeout(r, 200));
+  }
   const s = m.snapshot();
   assert.ok(s.cpu.pct !== null && s.cpu.pct >= 0 && s.cpu.pct <= 100, `cpu=${s.cpu.pct}`);
   assert.ok(s.mem.pct > 0);
