@@ -1,0 +1,334 @@
+/* ============================================================
+   iPad 儀表板（區網網頁版）
+   目標裝置：iPad 4（1024×768，iOS 10 Safari）。
+   只用 flexbox、CSS 變數、canvas 2D，不用 grid／動畫，舊機器才跑得順。
+   ============================================================ */
+
+:root {
+  --bg-1: #191c27;
+  --bg-2: #12141d;
+  --bg-3: #0e1016;
+  --card: rgba(255, 255, 255, 0.045);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text: #e8ecf5;
+  --text-dim: #9aa3b8;
+  --text-faint: #6b7387;
+  --accent: #e08a5e;
+  --codex: #6fb3ff;
+  --ok: #37d3a5;
+  --warn: #f2b13e;
+  --hot: #f0564a;
+  --track: rgba(255, 255, 255, 0.08);
+  --radius: 16px;
+  --font: "PingFang TC", "Heiti TC", "Segoe UI", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-3);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  overflow: hidden;
+}
+
+body {
+  background: -webkit-linear-gradient(top, var(--bg-1), var(--bg-3));
+  background: linear-gradient(180deg, var(--bg-1), var(--bg-3));
+}
+
+#app {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  height: 100%;
+  padding: 14px 18px 12px;
+}
+
+/* ---- 頂列 ---- */
+#topbar {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  padding: 0 4px 7px;
+  border-bottom: 1px solid var(--card-border);
+}
+.brand { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+.brand .title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+.brand .host { margin-left: 10px; font-size: 13px; color: var(--text-faint); }
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--text-faint); margin-right: 10px;
+}
+.dot.on { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.dot.off { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
+.clock {
+  font-size: 30px; font-weight: 300; letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.meta { font-size: 13px; color: var(--text-dim); text-align: right; }
+.meta span { display: block; }
+.meta #uptime { color: var(--text-faint); font-size: 12px; }
+
+/* ---- 主區：左額度、右系統 ---- */
+#grid {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex: 1;
+  flex: 1;
+  min-height: 0;
+  padding-top: 9px;
+}
+.col {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+#usage { width: 40%; padding-right: 14px; }
+#system { -webkit-flex: 1; flex: 1; }
+.col h2 {
+  font-size: 12px; font-weight: 600; letter-spacing: 2px;
+  color: var(--text-faint); text-transform: uppercase; margin: 0 4px 6px;
+}
+
+/* ---- 帳號卡 ---- */
+.cards { -webkit-flex: 1; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 8px 13px 7px;
+  margin-bottom: 6px;
+}
+.card.stale { opacity: 0.55; }
+.card-head {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  margin-bottom: 3px;
+}
+.card-head .label { font-size: 14.5px; font-weight: 600; -webkit-flex: 1; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  padding: 2px 7px; border-radius: 8px; margin-right: 8px;
+  background: rgba(224, 138, 94, 0.18); color: var(--accent);
+}
+.badge.codex { background: rgba(111, 179, 255, 0.16); color: var(--codex); }
+.badge.demo { background: rgba(255, 255, 255, 0.1); color: var(--text-dim); }
+.card-head .age { font-size: 11px; color: var(--text-faint); }
+/* 兩欄額度：左 5 小時、右 本週 */
+.quota { display: -webkit-flex; display: flex; margin: 0 -6px; }
+.q { -webkit-flex: 0 0 38%; flex: 0 0 38%; padding: 0 6px; min-width: 0; }
+.q.week { -webkit-flex: 1; flex: 1; }
+.wk-row { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: 5px; }
+.wk-name { width: 52px; font-size: 11.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-row .bar { -webkit-flex: 1; flex: 1; margin: 0 8px 0 0; }
+.wk-pct { width: 42px; text-align: right; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wk-pct small { font-size: 10px; font-weight: 400; color: var(--text-faint); }
+.wk-pct.warn { color: var(--warn); }
+.wk-pct.hot { color: var(--hot); }
+.wk-row:first-of-type { margin-top: 4px; }
+.q + .q { border-left: 1px solid var(--card-border); }
+.q.blank { border-left: 0; }
+.q-head { display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: baseline; align-items: baseline; }
+.q-name { font-size: 11.5px; color: var(--text-dim); letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-pct { font-size: 22px; font-weight: 600; line-height: 1.15; margin-top: 0; font-variant-numeric: tabular-nums; }
+.q-pct small { font-size: 12px; font-weight: 400; color: var(--text-faint); margin-left: 1px; }
+.q-pct.warn { color: var(--warn); }
+.q-pct.hot { color: var(--hot); }
+.q.none .q-pct { color: var(--text-faint); font-weight: 300; }
+.q-reset { font-size: 10.5px; color: var(--text-faint); white-space: nowrap; margin-left: 6px; }
+.bar { height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; margin-top: 4px; }
+.fill { height: 100%; border-radius: 4px; background: var(--ok); width: 0; }
+.fill.warn { background: var(--warn); }
+.fill.hot { background: var(--hot); }
+.card .err { font-size: 12px; color: var(--hot); margin-top: 6px; }
+.empty { color: var(--text-faint); font-size: 14px; padding: 20px 6px; }
+.hidden { display: none !important; }
+
+/* ---- 系統方塊 ---- */
+.tiles {
+  display: -webkit-flex; display: flex;
+  -webkit-flex-wrap: wrap; flex-wrap: wrap;
+  margin: 0 -5px;
+  min-width: 0;
+}
+.tile {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 12px 14px 8px;
+  margin: 0 5px 10px;
+  width: -webkit-calc(50% - 10px);
+  width: calc(50% - 10px);
+  position: relative;
+  min-width: 0;      /* 內容再長也不能把方塊撐寬 */
+  overflow: hidden;
+}
+.tile.wide { width: -webkit-calc(100% - 10px); width: calc(100% - 10px); }
+.tile-head {
+  display: -webkit-flex; display: flex;
+  -webkit-justify-content: space-between; justify-content: space-between;
+  -webkit-align-items: baseline; align-items: baseline;
+}
+.tile-head .name { font-size: 13px; font-weight: 600; color: var(--text-dim); letter-spacing: 1px; }
+.tile-head .sub { font-size: 11px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 72%; min-width: 0; }
+.big {
+  font-size: 44px; font-weight: 300; line-height: 1.1; margin: 4px 0 2px;
+  font-variant-numeric: tabular-nums;
+  display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline;
+}
+.big small { font-size: 18px; color: var(--text-faint); margin-left: 3px; }
+.big .temp { margin-left: auto; font-size: 22px; font-weight: 400; color: var(--text-dim); }
+.big .temp.warn { color: var(--warn); }
+.big .temp.hot { color: var(--hot); }
+.line { font-size: 12px; color: var(--text-faint); margin-bottom: 4px; min-height: 16px; }
+.cores { display: -webkit-flex; display: flex; height: 18px; margin: 4px 0 6px; }
+.cores span { -webkit-flex: 1; flex: 1; margin-right: 2px; background: var(--track); position: relative; border-radius: 2px; overflow: hidden; }
+.cores span i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--ok); }
+.cores span i.warn { background: var(--warn); }
+.cores span i.hot { background: var(--hot); }
+.spark { display: block; width: 100%; height: 64px; margin-top: 6px; }
+.tile .bar { margin: 8px 0 10px; }
+
+.disks { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin-top: 6px; }
+.disk { width: 25%; padding: 0 10px 6px 0; font-size: 12px; color: var(--text-dim); }
+.disk b { color: var(--text); font-weight: 600; margin-right: 6px; }
+.disk .bar { height: 6px; margin: 5px 0 0; }
+.disk { padding-bottom: 10px; }
+.hint { font-size: 11.5px; color: var(--text-faint); padding: 2px 6px; }
+/* 每顆實體硬碟一列：槽號＋型號｜忙碌條｜折線｜讀｜寫｜回應｜剩餘 */
+.dk {
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  width: 100%; margin-top: 5px; font-size: 12px; color: var(--text-dim);
+  white-space: nowrap; min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.dk:first-child { margin-top: 2px; }
+.dk-name { width: 21%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dk-name b { color: var(--text); font-weight: 600; margin-right: 6px; }
+.dk-busy { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; width: 15%; }
+.dk-busy .bar { display: block; -webkit-flex: 1; flex: 1; height: 6px; margin: 0 6px 0 0; }
+.dk-busy .fill { display: block; }
+.dk-busy em { font-style: normal; font-weight: 700; color: var(--text); width: 34px; text-align: right; font-size: 13px; }
+.dk-busy em small { font-size: 9px; font-weight: 400; color: var(--text-faint); }
+.dk-busy em.warn { color: var(--warn); }
+.dk-busy em.hot { color: var(--hot); }
+.dk-spark { display: block; width: 10%; height: 18px; margin: 0 6px; }
+.dk-io { width: 14%; min-width: 0; overflow: hidden; }
+.dk-io b, .dk-resp b { color: var(--text); font-weight: 600; }
+.dk-io small, .dk-resp small, .dk-space small { font-size: 9px; color: var(--text-faint); margin-left: 1px; }
+.dk-io.zero b { color: var(--text-faint); font-weight: 400; }
+.dk-resp { width: 12.5%; min-width: 0; overflow: hidden; }
+.dk-resp.warn b { color: var(--warn); }
+.dk-resp.hot b { color: var(--hot); }
+.dk-resp i { font-style: normal; color: var(--hot); font-weight: 600; }
+.dk-space { -webkit-flex: 1; flex: 1; text-align: right; min-width: 74px; overflow: hidden; }
+.tile-head .sub em { font-style: normal; font-weight: 600; }
+.tile-head .sub em.warn { color: var(--warn); }
+.tile-head .sub em.hot { color: var(--hot); }
+/* 溫度／風扇小標籤列（有裝 LibreHardwareMonitor 才有） */
+.temps { display: block; margin-top: 2px; max-height: 50px; overflow: hidden; line-height: 1; }
+.chip { display: inline-block; vertical-align: top; font-size: 11px; line-height: 15px; color: var(--text-dim); background: var(--track); border-radius: 8px; padding: 2px 8px; margin: 0 6px 5px 0; white-space: nowrap; }
+.chip b { font-weight: 600; color: var(--text); margin-left: 4px; }
+.chip.warn b { color: var(--warn); }
+.chip.hot b { color: var(--hot); }
+
+/* ---- 緊湊模式：帳號超過 3 個時自動切換（body.many）----
+   左欄加寬、卡片排兩欄、每列變薄；右邊系統方塊縮一點，讓 5～8 個帳號一頁看完 */
+body.many #usage { width: 58%; }
+body.many .cards { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-align-content: flex-start; align-content: flex-start; margin: 0 -4px; }
+body.many .card { width: -webkit-calc(50% - 8px); width: calc(50% - 8px); margin: 0 4px 8px; padding: 9px 12px 7px; }
+body.many .card-head { margin-bottom: 4px; }
+body.many .card-head .label { font-size: 13.5px; }
+body.many .badge { font-size: 9px; padding: 1px 6px; margin-right: 6px; }
+body.many .card-head .age { font-size: 10px; }
+body.many .q-pct { font-size: 21px; }
+body.many .bar { height: 5px; margin-top: 3px; }
+body.many .card .err { font-size: 11px; margin-top: 4px; }
+body.many .tile { padding: 10px 12px 6px; margin-bottom: 8px; }
+body.many .big { font-size: 34px; margin: 2px 0 0; }
+body.many .big small { font-size: 15px; }
+body.many .big .temp { font-size: 18px; }
+body.many .cores { height: 14px; margin: 3px 0 4px; }
+body.many .spark { height: 52px; margin-top: 4px; }
+body.many .tile .bar { margin: 6px 0 8px; }
+.tile .bar { height: 8px; border-radius: 4px; }
+body.many .disk { width: 33.33%; font-size: 11.5px; padding-bottom: 6px; }
+body.many .dk { font-size: 11px; margin-top: 3px; }
+body.many .dk-spark { display: none; }
+body.many .hint { font-size: 11px; }
+
+/* ---- 帳號多時的三種替代版面（網址加 ?layout=rows / grouped / top 切換）----
+   rows    ：單欄列表，每個帳號一列（名稱｜5 小時｜本週兩列），由上往下掃
+   grouped ：兩欄但依服務分組（左 Claude、右 Codex），卡片維持原版面
+   top     ：額度橫列在最上面（一列三張），系統方塊縮成下方一排 */
+body.many.rows #usage { width: 60%; }
+body.many.rows .cards { display: block; margin: 0; }
+body.many.rows .card { width: auto; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin: 0 0 6px; padding: 7px 12px; }
+body.many.rows .card-head { width: 31%; margin: 0 10px 0 0; -webkit-flex: none; flex: none; }
+body.many.rows .card-head .age { display: none; }
+body.many.rows .card-head .label { font-size: 13px; }
+body.many.rows .quota { -webkit-flex: 1; flex: 1; margin: 0; min-width: 0; }
+body.many.rows .q { -webkit-flex: 0 0 36%; flex: 0 0 36%; }
+body.many.rows .q-pct { font-size: 19px; line-height: 1.1; }
+body.many.rows .q-head .q-name { font-size: 11px; }
+body.many.rows .q-reset { font-size: 10px; }
+body.many.rows .wk-row { margin-top: 3px; }
+body.many.rows .wk-name { font-size: 11px; width: 46px; }
+body.many.rows .wk-pct { font-size: 13px; width: 38px; }
+body.many.rows .card .err, body.many.rows .card .line { margin: 0; -webkit-flex: 1; flex: 1; }
+
+body.many.grouped #usage { width: 60%; }
+body.many.grouped .cards { margin: 0 -4px; }
+body.many.grouped .cards-col { width: 50%; padding: 0 4px; -webkit-box-sizing: border-box; box-sizing: border-box; }
+body.many.grouped .cards-col h3 { font-size: 10.5px; font-weight: 600; letter-spacing: 1.5px; color: var(--text-faint); margin: 0 2px 5px; text-transform: uppercase; }
+body.many.grouped .card { width: auto; margin: 0 0 8px; }
+
+body.many.top #grid { -webkit-flex-direction: column; flex-direction: column; }
+body.many.top #usage { width: auto; padding-right: 0; -webkit-flex: none; flex: none; margin-bottom: 4px; }
+body.many.top .cards { overflow: visible; -webkit-flex: none; flex: none; }
+body.many.top .card { width: -webkit-calc(33.333% - 8px); width: calc(33.333% - 8px); }
+body.many.top .q-pct { font-size: 24px; }
+body.many.top #system { -webkit-flex: 1; flex: 1; }
+body.many.top .tile { width: -webkit-calc(25% - 10px); width: calc(25% - 10px); padding: 8px 12px 4px; margin-bottom: 6px; }
+body.many.top .tile.wide { width: -webkit-calc(100% - 10px); width: calc(100% - 10px); }
+body.many.top .big { font-size: 28px; }
+body.many.top .big small { font-size: 13px; }
+body.many.top .big .temp { font-size: 15px; }
+body.many.top .cores { height: 10px; margin: 2px 0 3px; }
+body.many.top .spark { height: 30px; margin-top: 2px; }
+body.many.top .line { margin-bottom: 2px; min-height: 14px; }
+body.many.top .tile .bar { margin: 4px 0 6px; }
+
+/* ---- 拖曳排序（長按卡片後移動）---- */
+.card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.card.lifted { -webkit-transform: scale(1.03); transform: scale(1.03); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); border-color: var(--ok); z-index: 5; position: relative; opacity: 0.95; }
+.card.lifted, .card.lifted * { pointer-events: none; }
+#usage h2 .hint-drag { font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: 10px; font-size: 11px; }
+
+/* 直放（768 寬）：上下排 */
+@media (max-width: 800px) {
+  #grid { -webkit-flex-direction: column; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  #usage { width: auto; padding-right: 0; margin-bottom: 8px; }
+  .cards { overflow: visible; }
+  .clock { font-size: 24px; }
+  .disk { width: 50%; }
+  .dk-resp { display: none; }
+  body.many #usage { width: auto; }
+  body.many .disk { width: 50%; }
+}

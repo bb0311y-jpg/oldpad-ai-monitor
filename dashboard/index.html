@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>AI 用量與系統監測</title>
+  <!-- 舊 iPad 用：加到主畫面後全螢幕、不顯示 Safari 工具列 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="icon" href="data:," />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="系統監測" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand">
+        <span class="dot" id="conn-dot"></span>
+        <span class="title">AI 用量監控</span>
+        <span class="host" id="host"></span>
+      </div>
+      <div class="clock" id="clock">--:--</div>
+      <div class="meta">
+        <span id="uptime"></span>
+        <span id="conn-text">連線中…</span>
+      </div>
+    </header>
+
+    <main id="grid">
+      <section id="usage" class="col">
+        <h2>AI 額度</h2>
+        <div id="accounts" class="cards"></div>
+        <div id="usage-empty" class="empty hidden">還沒有帳號，請在電腦上的小工具裡新增。</div>
+      </section>
+
+      <section id="system" class="col">
+        <h2>系統</h2>
+        <div class="tiles">
+          <div class="tile" id="tile-cpu">
+            <div class="tile-head"><span class="name">CPU</span><span class="sub" id="cpu-model"></span></div>
+            <div class="big"><span id="cpu-pct">–</span><small>%</small><span class="temp" id="cpu-temp"></span></div>
+            <div class="cores" id="cpu-cores"></div>
+            <canvas class="spark" id="spark-cpu" width="400" height="56"></canvas>
+          </div>
+          <div class="tile" id="tile-gpu">
+            <div class="tile-head"><span class="name">GPU</span><span class="sub" id="gpu-name"></span></div>
+            <div class="big"><span id="gpu-pct">–</span><small>%</small><span class="temp" id="gpu-temp"></span></div>
+            <div class="line" id="gpu-line"></div>
+            <canvas class="spark" id="spark-gpu" width="400" height="56"></canvas>
+          </div>
+          <div class="tile" id="tile-ram">
+            <div class="tile-head"><span class="name">記憶體</span><span class="sub" id="ram-sub"></span></div>
+            <div class="big"><span id="ram-pct">–</span><small>%</small></div>
+            <div class="bar"><div class="fill" id="ram-fill"></div></div>
+            <canvas class="spark" id="spark-ram" width="400" height="56"></canvas>
+          </div>
+          <div class="tile" id="tile-vram">
+            <div class="tile-head"><span class="name">顯示記憶體</span><span class="sub" id="vram-sub"></span></div>
+            <div class="big"><span id="vram-pct">–</span><small>%</small></div>
+            <div class="bar"><div class="fill" id="vram-fill"></div></div>
+            <canvas class="spark" id="spark-vram" width="400" height="56"></canvas>
+          </div>
+          <div class="tile wide" id="tile-disk">
+            <div class="tile-head"><span class="name">硬碟</span><span class="sub" id="disk-sub"></span></div>
+            <div class="disks" id="disks"></div>
+            <div class="temps" id="temps"></div>
+          </div>
+        </div>
+        <div class="hint" id="lhm-hint"></div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

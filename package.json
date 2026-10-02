@@ -1,0 +1,71 @@
+{
+  "name": "oldpad-ai-monitor",
+  "version": "1.4.2",
+  "description": "OldPad AI Monitor: turn an old iPad / tablet into an always-on AI quota (Claude, ChatGPT Codex) and PC monitor, with a Windows desktop widget",
+  "author": "Antor",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bb0311y-jpg/oldpad-ai-monitor"
+  },
+  "keywords": [
+    "old-ipad",
+    "tablet",
+    "dashboard",
+    "claude",
+    "codex",
+    "usage",
+    "quota",
+    "electron"
+  ],
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "test": "node test/units.js",
+    "make-icon": "node scripts/make-icon.js",
+    "dist": "node scripts/make-icon.js && electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.antor.oldpad-ai-monitor",
+    "productName": "OldPad AI Monitor",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "dashboard/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AI用量監控",
+      "artifactName": "OldPad-AI-Monitor-Setup-${version}.${ext}",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "artifactName": "OldPad-AI-Monitor-Setup-${version}.${ext}"
+  },
+  "homepage": "https://github.com/bb0311y-jpg/oldpad-ai-monitor#readme"
+}
