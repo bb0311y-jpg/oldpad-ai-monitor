@@ -24,6 +24,7 @@ const ICONS = {
   trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
   alert: '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+  credit: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>',
   chevron: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
 };
 
@@ -148,6 +149,10 @@ function cardHtml(account) {
       </div>`;
   } else if (usage && usage.ok) {
     body = `<div class="buckets">${usage.buckets.map((b) => bucketHtml(b, compact, usage.buckets)).join('')}</div>`;
+    if (usage.credits && Array.isArray(usage.credits.items) && usage.credits.items.length) {
+      const parts = usage.credits.items.map((it) => `${esc(it.name)} <b>${esc(it.text)}</b>`).join('<span class="sep">·</span>');
+      body += `<div class="card-note credits${usage.credits.level === 'hot' ? ' warn-text' : ''}">${ICONS.credit}<span>${parts}</span></div>`;
+    }
     if (!compact) {
       const at = new Date(usage.fetchedAt);
       const ageMin = Math.round((Date.now() - usage.fetchedAt) / 60000);

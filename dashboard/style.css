@@ -315,6 +315,34 @@ body.many.top .spark { height: 30px; margin-top: 2px; }
 body.many.top .line { margin-bottom: 2px; min-height: 14px; }
 body.many.top .tile .bar { margin: 4px 0 6px; }
 
+/* ---- 5 小時圓環＋Credits 一行 ---- */
+.ring-cell { -webkit-flex: 0 0 34%; flex: 0 0 34%; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; text-align: center; }
+.ring { position: relative; width: 62px; height: 62px; }
+.donut { width: 100%; height: 100%; display: block; }
+.donut-bg { fill: none; stroke: var(--track); stroke-width: 6; }
+.donut-fg { fill: none; stroke: var(--ok); stroke-width: 6; stroke-linecap: round; }
+.donut-fg.warn { stroke: var(--warn); }
+.donut-fg.hot { stroke: var(--hot); }
+.ring .pct { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ring .pct small { font-size: 9px; font-weight: 400; color: var(--text-faint); margin-left: 1px; }
+.ring .pct.warn { color: var(--warn); }
+.ring .pct.hot { color: var(--hot); }
+.ring-cell.none .pct { color: var(--text-faint); font-weight: 300; }
+.ring-name { font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-top: 3px; }
+.ring-cell .q-reset { margin-left: 0; margin-top: 1px; }
+.credit-line { font-size: 11px; color: var(--text-faint); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.credit-line .credit-tag { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; color: var(--text-faint); margin-right: 7px; text-transform: uppercase; }
+.credit-line b { color: var(--text-dim); font-weight: 600; }
+.credit-line .sep { margin: 0 6px; }
+.credit-line.hot b { color: var(--hot); }
+body.many .ring { width: 54px; height: 54px; }
+body.many .ring .pct { font-size: 15px; }
+body.many .credit-line { font-size: 10.5px; margin-top: 4px; }
+body.many.rows .ring { width: 46px; height: 46px; }
+body.many.rows .ring .pct { font-size: 13px; }
+body.many.rows .ring-name { display: none; }
+body.many.rows .credit-line { margin: 0 0 0 10px; -webkit-flex: 0 1 30%; flex: 0 1 30%; }
+
 /* ---- 拖曳排序（長按卡片後移動）---- */
 .card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .card.lifted { -webkit-transform: scale(1.03); transform: scale(1.03); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); border-color: var(--ok); z-index: 5; position: relative; opacity: 0.95; }

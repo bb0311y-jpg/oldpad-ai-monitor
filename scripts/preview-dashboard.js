@@ -34,8 +34,21 @@ async function refresh() {
     const r = await demo.fetchUsage(null, (i + 1) * 1.7);
     let buckets = r.buckets;
     if (a.provider === 'codex') buckets = r.buckets.slice(1, 2);
-    usage[a.id] = { ok: true, buckets, fetchedAt: Date.now() };
+    usage[a.id] = { ok: true, buckets, credits: demoCredits(a.provider, i), fetchedAt: Date.now() };
   }
+}
+
+// 各家 Credits 的示範樣子（Claude＝額外用量金額／美元額度；Codex＝點數＋重置券）
+function demoCredits(provider, i) {
+  if (provider === 'codex') {
+    return { label: 'Credits', items: [{ name: '點數', text: `${(12000 + i * 9000).toLocaleString('en-US')}（約 3,000～15,000 則）` }, { name: '重置券', text: `${(i % 3) + 1} 張` }], percent: null, level: null };
+  }
+  if (provider === 'claude') {
+    return i % 2
+      ? { label: 'Credits', items: [{ name: '額外用量', text: '未啟用' }, { name: '美元額度', text: '$0 / $250（11/5 重置）' }], percent: 0, level: null }
+      : { label: 'Credits', items: [{ name: '額外用量', text: '已用 $4.20 / $25（17%）' }], percent: 17, level: null };
+  }
+  return null;
 }
 
 function pullProxy() {

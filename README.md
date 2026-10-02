@@ -101,8 +101,11 @@ Portrait (768 px wide) stacks quota above the system tiles:
 
 <img src="docs/layout-portrait.png" width="384" alt="portrait layout">
 
-Every card shows the 5-hour window (big number + countdown) and the weekly quota (overall + per-model rows).
-Cards go grey when the PC has not refreshed that account for 20 minutes.
+Every card shows the 5-hour window as a ring (percent in the middle, reset countdown below) and the weekly
+quota (overall + per-model rows). A **Credits** line underneath shows what the vendor reports beyond the plan
+quota: for Claude the paid *extra usage* (used / limit / %, or "not enabled") plus any dollar-denominated
+allowance on the account; for ChatGPT Codex the credit balance (with the approximate message range) and the
+number of rate-limit reset vouchers. Cards go grey when the PC has not refreshed that account for 20 minutes.
 
 ## Troubleshooting
 

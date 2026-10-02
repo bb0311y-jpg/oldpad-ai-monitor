@@ -41,7 +41,11 @@ async function fetchUsage(_token, seed = 1) {
       resetsAt: nextResetIso(week, seed * 11 * 3600 * 1000),
     },
   ];
-  return { buckets, raw: { demo: true } };
+  // Credits 示範：奇數 seed 像 Claude 的額外用量（金額），偶數像 Codex 的點數
+  const credits = Math.round(seed) % 2
+    ? { label: 'Credits', items: [{ name: '額外用量', text: `已用 $${(wave(seed + 0.9, 3 * 3600 * 1000, 2, 18)).toFixed(2)} / $25（${Math.round(wave(seed + 0.9, 3 * 3600 * 1000, 8, 72))}%）` }], percent: null, level: null }
+    : { label: 'Credits', items: [{ name: '點數', text: `${Math.round(wave(seed + 1.2, 6 * 3600 * 1000, 12000, 58000)).toLocaleString('en-US')}（約 3,000～15,000 則）` }, { name: '重置券', text: '2 張' }], percent: null, level: null };
+  return { buckets, credits, raw: { demo: true } };
 }
 
 module.exports = { fetchUsage };

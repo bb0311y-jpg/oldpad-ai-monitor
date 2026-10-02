@@ -135,19 +135,37 @@
     return '<span class="badge">CLAUDE</span>';
   }
 
-  // 一格額度：名稱／大百分比／細條／剩多久重置
-  //   name 為空 → 這張卡沒有這種額度，留白但佔位（讓每張卡的三欄對齊）
-  //   showReset=false → 不寫重置（分模型額度跟本週同時重置，只在本週寫一次）
+  // 鏤空圓環（SVG 兩個圓：底色一圈＋依百分比畫一段弧），iOS 9/10 Safari 也能畫
+  function donutSvg(pct, lv) {
+    var r = 24;
+    var c = 2 * Math.PI * r;
+    var dash = (Math.min(100, Math.max(0, pct || 0)) / 100 * c).toFixed(2);
+    return '<svg class="donut" viewBox="0 0 56 56"><circle class="donut-bg" cx="28" cy="28" r="' + r + '"></circle>' +
+      '<circle class="donut-fg ' + lv + '" cx="28" cy="28" r="' + r + '" stroke-dasharray="' + dash + ' ' + c.toFixed(2) + '" transform="rotate(-90 28 28)"></circle></svg>';
+  }
+
+  // 左欄「5 小時」：圓環中間放百分比，下面寫名稱與剩多久重置
+  //   name 為空 → 這張卡沒有這種額度，留白但佔位（讓每張卡的欄位對齊）
   function quotaCell(name, bucket, showReset) {
     if (!name) return '<div class="q blank"></div>';
-    if (!bucket) return '<div class="q none"><div class="q-name">' + esc(name) + '</div><div class="q-pct">–</div></div>';
+    if (!bucket) {
+      return '<div class="q ring-cell none"><div class="ring">' + donutSvg(0, '') + '<div class="pct">–</div></div><div class="ring-name">' + esc(name) + '</div></div>';
+    }
     var lv = levelOf(bucket.percent);
-    // 倒數放在標題同一行靠右（省一行高度，五張卡才放得下）
-    var html = '<div class="q"><div class="q-head"><span class="q-name">' + esc(name) + '</span>';
+    var html = '<div class="q ring-cell"><div class="ring">' + donutSvg(bucket.percent, lv) +
+      '<div class="pct ' + lv + '">' + Math.round(bucket.percent) + '<small>%</small></div></div>';
+    html += '<div class="ring-name">' + esc(name) + '</div>';
     if (showReset) html += '<span class="q-reset" data-reset="' + esc(bucket.resetsAt || '') + '">' + fmtReset(bucket.resetsAt, true) + '</span>';
-    html += '</div><div class="q-pct ' + lv + '">' + Math.round(bucket.percent) + '<small>%</small></div>';
-    html += '<div class="bar"><div class="fill ' + lv + '" style="width:' + Math.min(100, bucket.percent) + '%"></div></div></div>';
+    html += '</div>';
     return html;
+  }
+
+  // Credits 一行（各家的額外用量／點數）；沒有資料的服務就不畫
+  function creditLine(credits) {
+    if (!credits || !credits.items || !credits.items.length) return '';
+    var parts = [];
+    for (var i = 0; i < credits.items.length; i++) parts.push(esc(credits.items[i].name) + ' <b>' + esc(credits.items[i].text) + '</b>');
+    return '<div class="credit-line' + (credits.level === 'hot' ? ' hot' : '') + '"><span class="credit-tag">Credits</span>' + parts.join('<span class="sep">·</span>') + '</div>';
   }
 
   // 本週欄：兩列（全部模型／分模型），每列「名稱｜進度條｜百分比」同一行，重置只寫一次
@@ -240,6 +258,7 @@
         if (!week && scoped) { week = scoped; scoped = null; }
         // 左「5 小時」大數字；右「本週」兩列（全部／分模型）
         html += '<div class="quota">' + quotaCell('5 小時', session, true) + weekCell(week, scoped) + '</div>';
+        html += creditLine(u.credits);
       }
       html += '</div>';
       cardsHtml.push({ provider: a.provider, html: html });

@@ -117,6 +117,38 @@ function normalizeUsage(raw) {
   return buckets;
 }
 
+// ---- Credits：ChatGPT 的用量點數（超過方案額度後可扣）＋速率重置券 ----
+function fmtInt(n) {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function normalizeCredits(raw) {
+  const c = raw && raw.credits && typeof raw.credits === 'object' ? raw.credits : null;
+  const resets = raw && raw.rate_limit_reset_credits && typeof raw.rate_limit_reset_credits === 'object' ? raw.rate_limit_reset_credits : null;
+  if (!c && !resets) return null;
+  const items = [];
+  let level = null;
+  if (c) {
+    let text;
+    if (c.unlimited) text = '無限';
+    else if (!c.has_credits) text = '無';
+    else {
+      const bal = num(c.balance);
+      text = bal === null ? '有' : fmtInt(bal);
+      const range = Array.isArray(c.approx_local_messages) ? c.approx_local_messages.map((x) => num(x)).filter((x) => x !== null) : [];
+      if (range.length === 2 && range[1] > 0) text += `（約 ${fmtInt(range[0])}～${fmtInt(range[1])} 則）`;
+    }
+    if (c.overage_limit_reached) {
+      text += '・已達上限';
+      level = 'hot';
+    }
+    items.push({ name: '點數', text });
+  }
+  const n = resets ? num(resets.available_count) : null;
+  if (n !== null) items.push({ name: '重置券', text: `${n} 張` });
+  return { label: 'Credits', items, percent: null, level };
+}
+
 async function fetchUsage(accessToken, accountId) {
   const headers = {
     Authorization: `Bearer ${accessToken}`,
@@ -137,7 +169,7 @@ async function fetchUsage(accessToken, accountId) {
   }
   if (!res.ok) throw new Error(`伺服器回應 HTTP ${res.status}`);
   const raw = await res.json();
-  return { buckets: normalizeUsage(raw), raw };
+  return { buckets: normalizeUsage(raw), credits: normalizeCredits(raw), raw };
 }
 
-module.exports = { fetchUsage, normalizeUsage, AuthError };
+module.exports = { fetchUsage, normalizeUsage, normalizeCredits, AuthError };

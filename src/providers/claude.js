@@ -149,9 +149,73 @@ function normalizeUsage(raw) {
   return buckets;
 }
 
+// ---- Credits（額外用量）--------------------------------------
+// 回應裡的 spend／extra_usage 是「超過方案額度後可用的付費額度」；
+// 另外有些帳號會多一個以美元計的額度物件（limit_dollars / used_dollars，例如促銷額度），一併列出。
+function money(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  const n = num(obj.amount_minor);
+  if (n === null) return null;
+  const exp = num(obj.exponent);
+  return n / 10 ** (exp === null ? 2 : exp);
+}
+
+function fmtMoney(v, currency) {
+  if (v === null || v === undefined) return null;
+  const sym = !currency || currency === 'USD' ? '$' : `${currency} `;
+  return `${sym}${Number.isInteger(v) ? v : v.toFixed(2)}`;
+}
+
+function normalizeCredits(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const spend = raw.spend && typeof raw.spend === 'object' ? raw.spend : null;
+  const eu = raw.extra_usage && typeof raw.extra_usage === 'object' ? raw.extra_usage : null;
+  if (!spend && !eu) return null;
+  const items = [];
+  let percent = null;
+  let level = null;
+
+  const enabled = Boolean((spend && spend.enabled) || (eu && eu.is_enabled));
+  if (enabled) {
+    const currency = (spend && spend.used && spend.used.currency) || (eu && eu.currency) || 'USD';
+    const used = money(spend && spend.used);
+    const limit = money(spend && spend.limit) ?? num(eu && eu.monthly_limit);
+    const balance = money(spend && spend.balance) ?? num(spend && spend.balance);
+    percent = num(spend && spend.percent, eu && eu.utilization);
+    let text;
+    if (balance !== null) text = `餘額 ${fmtMoney(balance, currency)}`;
+    else text = `已用 ${fmtMoney(used ?? 0, currency)}${limit !== null ? ` / ${fmtMoney(limit, currency)}` : ''}`;
+    if (percent !== null) text += `（${Math.round(percent)}%）`;
+    if ((spend && spend.spend_limit_reached) || (eu && eu.spend_limit_reached)) {
+      text += '・已達上限';
+      level = 'hot';
+    }
+    items.push({ name: '額外用量', text });
+  } else {
+    items.push({ name: '額外用量', text: eu && eu.credits_ever_enabled ? '已關閉' : '未啟用' });
+  }
+
+  // 以美元計的額度（名稱是 API 的內部代號，不顯示）
+  for (const [key, v] of Object.entries(raw)) {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || key === 'spend' || key === 'extra_usage') continue;
+    const limitD = num(v.limit_dollars);
+    if (limitD === null) continue;
+    const usedD = num(v.used_dollars) ?? 0;
+    const reset = pickResetsAt(v);
+    let t = `${fmtMoney(usedD)} / ${fmtMoney(limitD)}`;
+    if (reset) {
+      const d = new Date(reset);
+      if (!Number.isNaN(d.getTime())) t += `（${d.getMonth() + 1}/${d.getDate()} 重置）`;
+    }
+    items.push({ name: '美元額度', text: t });
+    if (percent === null && limitD > 0) percent = Math.round((100 * usedD) / limitD);
+  }
+  return { label: 'Credits', items, percent, level };
+}
+
 async function fetchUsage(accessToken) {
   const raw = await getJson(C.CLAUDE_USAGE_URL, accessToken);
-  return { buckets: normalizeUsage(raw), raw };
+  return { buckets: normalizeUsage(raw), credits: normalizeCredits(raw), raw };
 }
 
 async function fetchProfile(accessToken) {
@@ -168,4 +232,4 @@ async function fetchProfile(accessToken) {
   return { email, name, raw };
 }
 
-module.exports = { fetchUsage, fetchProfile, normalizeUsage, AuthError };
+module.exports = { fetchUsage, fetchProfile, normalizeUsage, normalizeCredits, AuthError };

@@ -139,6 +139,7 @@ class UsagePoller {
       this.onResult(accountId, {
         ok: true,
         buckets: result.buckets,
+        credits: result.credits || null, // 各家的「額外用量／點數」資訊；沒有就 null
         fetchedAt: Date.now(),
       });
     } catch (err) {

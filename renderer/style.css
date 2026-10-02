@@ -320,6 +320,12 @@ body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .card-note.error { color: var(--warn); }
+/* Credits（額外用量／點數）一行：名稱淡、數值稍亮 */
+.card-note.credits { margin-top: 5px; }
+.card-note.credits b { color: var(--text-dim); font-weight: 600; }
+.card-note.credits .sep { margin: 0 5px; }
+.card-note.credits.warn-text b { color: var(--warn); }
+body.compact .card-note.credits { display: none; }
 
 .reauth-btn {
   margin-left: auto;

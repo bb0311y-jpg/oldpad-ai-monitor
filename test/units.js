@@ -693,6 +693,51 @@ testAsync('伺服器：POST /api/order 回存順序；格式不對 400、太大 
   await noHandler.stop();
 });
 
+console.log('\nCredits（額外用量／點數）：');
+{
+  const claude = require('../src/providers/claude');
+  test('Claude：額外用量未啟用＋美元額度物件 → 兩個項目，百分比用美元額度算', () => {
+    const raw = {
+      spend: { used: { amount_minor: 0, currency: 'USD', exponent: 2 }, limit: null, percent: 0, enabled: false, balance: null },
+      extra_usage: { is_enabled: false, credits_ever_enabled: false },
+      iguana_necktie: { utilization: 0, resets_at: '2026-11-05T07:59:00+00:00', limit_dollars: 250, used_dollars: 12.5 },
+      five_hour: { utilization: 2, limit_dollars: null },
+    };
+    const c = claude.normalizeCredits(raw);
+    assert.deepStrictEqual(c.items.map((i) => i.name), ['額外用量', '美元額度']);
+    assert.strictEqual(c.items[0].text, '未啟用');
+    assert.strictEqual(c.items[1].text, '$12.50 / $250（11/5 重置）');
+    assert.strictEqual(c.percent, 5);
+  });
+  test('Claude：額外用量已啟用 → 已用／上限／百分比；達上限標 hot；關過的顯示已關閉', () => {
+    const on = claude.normalizeCredits({
+      spend: { used: { amount_minor: 1234, currency: 'USD', exponent: 2 }, limit: { amount_minor: 5000, currency: 'USD', exponent: 2 }, percent: 24.7, enabled: true, balance: null, spend_limit_reached: false },
+      extra_usage: { is_enabled: true },
+    });
+    assert.strictEqual(on.items[0].text, '已用 $12.34 / $50（25%）');
+    assert.strictEqual(on.percent, 24.7);
+    const capped = claude.normalizeCredits({ spend: { used: { amount_minor: 5000, exponent: 2 }, percent: 100, enabled: true, spend_limit_reached: true } });
+    assert.ok(capped.items[0].text.includes('已達上限'));
+    assert.strictEqual(capped.level, 'hot');
+    const off = claude.normalizeCredits({ extra_usage: { is_enabled: false, credits_ever_enabled: true } });
+    assert.strictEqual(off.items[0].text, '已關閉');
+    assert.strictEqual(claude.normalizeCredits({ limits: [] }), null, '沒有 spend／extra_usage 就 null');
+  });
+  test('Codex：有點數 → 千分位＋約略訊息數；沒點數 → 無；重置券張數', () => {
+    const c = codex.normalizeCredits({
+      credits: { has_credits: true, unlimited: false, overage_limit_reached: false, balance: '56581.1407', approx_local_messages: [14145, 73555] },
+      rate_limit_reset_credits: { available_count: 3 },
+    });
+    assert.deepStrictEqual(c.items, [{ name: '點數', text: '56,581（約 14,145～73,555 則）' }, { name: '重置券', text: '3 張' }]);
+    const none = codex.normalizeCredits({ credits: { has_credits: false, balance: '0', approx_local_messages: [0, 0] }, rate_limit_reset_credits: { available_count: 2 } });
+    assert.strictEqual(none.items[0].text, '無');
+    assert.strictEqual(none.items[1].text, '2 張');
+    const over = codex.normalizeCredits({ credits: { has_credits: true, balance: '10', overage_limit_reached: true } });
+    assert.strictEqual(over.level, 'hot');
+    assert.strictEqual(codex.normalizeCredits({ rate_limit: {} }), null);
+  });
+}
+
 console.log('\n硬碟讀寫取樣失敗時沿用上一筆：');
 {
   const { SystemMetrics } = require('../src/sysmetrics');
