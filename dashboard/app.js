@@ -179,7 +179,8 @@
     };
     var html = '<div class="q week"><div class="q-head"><span class="q-name">本週</span>';
     html += '<span class="q-reset" data-reset="' + esc(week.resetsAt || '') + '">' + fmtReset(week.resetsAt, true) + '</span></div>';
-    html += row(scoped ? '全部' : '全部模型', week);
+    // 沒有「全部模型」週額度、拿分模型的頂上來時要寫出是哪些模型，不能誤標成「全部模型」
+    html += row(week.kind === 'weekly_scoped' ? (week.model || '模型') : scoped ? '全部' : '全部模型', week);
     if (scoped) html += row(scoped.model || '模型', scoped);
     html += '</div>';
     return html;
