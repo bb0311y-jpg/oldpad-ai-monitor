@@ -177,10 +177,13 @@
         '<div class="bar"><div class="fill ' + lv + '" style="width:' + Math.min(100, b.percent) + '%"></div></div>' +
         '<span class="wk-pct ' + lv + '">' + Math.round(b.percent) + '<small>%</small></span></div>';
     };
-    var html = '<div class="q week"><div class="q-head"><span class="q-name">本週</span>';
-    html += '<span class="q-reset" data-reset="' + esc(week.resetsAt || '') + '">' + fmtReset(week.resetsAt, true) + '</span></div>';
     // 沒有「全部模型」週額度、拿分模型的頂上來時要寫出是哪些模型，不能誤標成「全部模型」
-    html += row(week.kind === 'weekly_scoped' ? (week.model || '模型') : scoped ? '全部' : '全部模型', week);
+    var firstName = week.kind === 'weekly_scoped' ? (week.model || '模型') : scoped ? '全部' : '全部模型';
+    // 名稱比「全部模型」長 → 整欄名稱加寬，兩列的條還是對齊
+    var wide = firstName.length > 6 || (scoped && String(scoped.model || '').length > 6);
+    var html = '<div class="q week' + (wide ? ' wide' : '') + '"><div class="q-head"><span class="q-name">本週</span>';
+    html += '<span class="q-reset" data-reset="' + esc(week.resetsAt || '') + '">' + fmtReset(week.resetsAt, true) + '</span></div>';
+    html += row(firstName, week);
     if (scoped) html += row(scoped.model || '模型', scoped);
     html += '</div>';
     return html;
